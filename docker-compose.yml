@@ -1,0 +1,30 @@
+# Local database container. Import legacy schema and additive migrations explicitly.
+services:
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: 4010
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${QHS_LOCAL_DB_PASSWORD:?Set QHS_LOCAL_DB_PASSWORD}
+      DB_NAME: can15657_canquochung
+    ports:
+      - '127.0.0.1:4010:4010'
+    depends_on:
+      - mysql
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${QHS_LOCAL_DB_PASSWORD:?Set QHS_LOCAL_DB_PASSWORD}
+      MYSQL_DATABASE: can15657_canquochung
+    volumes:
+      - mysql_data:/var/lib/mysql
+volumes:
+  mysql_data:
+

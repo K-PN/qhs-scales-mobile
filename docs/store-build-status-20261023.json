@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-23",
+  "name": "Quốc Hưng Scales",
+  "releaseDirectory": "release/store-20261023",
+  "bundleIdentifier": "com.doluongquochung.scales",
+  "androidPackage": "com.doluongquochung.scales",
+  "expoSDK": "54.0.38",
+  "reactNative": "0.81.5",
+  "node": "22.23.3",
+  "validation": {
+    "typescript": "PASS",
+    "expoCompatibility": "PASS",
+    "expoDoctor": "18/18 PASS",
+    "javascriptExports": {
+      "ios": "PASS",
+      "android": "PASS",
+      "web": "PASS"
+    },
+    "androidPrebuild": "PASS after copying bundled native template with Node 18 on Windows",
+    "iosConfigIntrospection": "PASS",
+    "apiAndBrowserChecks": "128/128 PASS on SDK 54 with isolated MariaDB"
+  },
+  "cloudBuildSubmitted": false,
+  "signedArtifacts": [],
+  "blockers": [
+    "production HTTPS API URL not supplied",
+    "Expo/EAS account not logged in",
+    "Apple/Android signing credentials not verified"
+  ],
+  "fingerprint": {
+    "app.json": "95d0f3c6dfba1f38f0f7b9e27f8204625dcc5b7758daa633974b146da519b39b",
+    "eas.json": "6e2d81debbebab78f23e54aeefde2e8041c02a729c6d5db8332b70f122c0ca93",
+    "package.json": "967783c88bca9845770947366cc5439e078d4b404352c7d213d3892903c5df87",
+    "package-lock.json": "cc40079e0284dfc0015b79956395b99b4837ea36990dacee7cd5fea4eeddfc56",
+    "assets/app-icon.png": "2ce663ae28652ce7522b3e53bff2a0312a2da48263c5d0846816b7d63ef84634",
+    "assets/adaptive-icon.png": "134a638f08ca79f07a87bb7016a3f151f531f29ff2c1352472b45a95704957ec",
+    "assets/splash-logo.png": "54f1a7c797b4e6a54c1f80d74a46bd85d20a149824bddcc7bc9fccfb07bf0e76"
+  }
+}

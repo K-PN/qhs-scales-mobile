@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chính sách quyền riêng tư — QHS Scales | Quốc Hưng</title><meta name="description" content="Chính sách quyền riêng tư của ứng dụng QHS Scales: thông tin được xử lý, phân quyền, lưu trữ và yêu cầu về dữ liệu."><meta name="color-scheme" content="light">
+<style>
+:root {
+  --header-offset: 100px;
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-padding-top: var(--header-offset);
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  color: #192b20;
+  background: #f5f7f3;
+  font:
+    17px/1.85 system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+a {
+  color: #185c2c;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+a:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #77c589;
+  outline-offset: 4px;
+}
+.skip {
+  position: fixed;
+  top: -100px;
+  left: 16px;
+  background: #fff;
+  padding: 12px;
+  z-index: 100;
+}
+.skip:focus {
+  top: 12px;
+}
+.policy-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #185c2c;
+  color: white;
+  padding-top: env(safe-area-inset-top, 0px);
+  box-shadow: 0 2px 10px #122a1820;
+}
+.header-inner {
+  max-width: 1100px;
+  min-height: 72px;
+  margin: auto;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 8px 14px;
+  color: white;
+  border: 1px solid #ffffff55;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 650;
+  flex-shrink: 0;
+}
+.back:hover {
+  background: #ffffff16;
+}
+.back svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.header-brand {
+  min-width: 0;
+}
+.header-brand a {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+.header-brand p {
+  margin: 0;
+  color: #e3f0e5;
+  font-size: 14px;
+}
+.layout {
+  max-width: 1100px;
+  margin: 28px auto 48px;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 28px;
+}
+.desktop-contents {
+  position: sticky;
+  top: var(--header-offset);
+  align-self: start;
+  font-size: 14px;
+  max-height: calc(100dvh - var(--header-offset) - 20px);
+  overflow-y: auto;
+}
+.desktop-contents strong {
+  display: block;
+  margin-bottom: 12px;
+}
+.desktop-contents a {
+  display: block;
+  padding: 8px 4px;
+  text-decoration: none;
+  line-height: 1.65;
+}
+.desktop-contents a:hover {
+  text-decoration: underline;
+}
+article {
+  background: white;
+  border: 1px solid #e5ebe3;
+  border-radius: 18px;
+  padding: 32px;
+  min-width: 0;
+}
+h1 {
+  font-size: clamp(28px, 4vw, 36px);
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+  margin: 0 0 12px;
+}
+h2 {
+  font-size: 21px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+  color: #185c2c;
+}
+p {
+  margin: 0 0 18px;
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+.updated {
+  font-size: 14px;
+  color: #52665b;
+}
+.intro {
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: #edf5ee;
+  margin: 22px 0;
+}
+article > section {
+  border-top: 1px solid #e5ebe3;
+  padding-top: 26px;
+  margin-top: 28px;
+}
+article > section > p:last-child {
+  margin-bottom: 0;
+}
+.mobile-contents {
+  display: none;
+}
+article > .contact {
+  background: #eaf4eb;
+  border: 0;
+  padding: 22px;
+  border-radius: 14px;
+}
+.contact a {
+  display: inline-block;
+  padding: 6px 0;
+}
+footer {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px max(28px, env(safe-area-inset-bottom, 0px));
+  color: #52665b;
+  font-size: 14px;
+}
+@media (max-width: 760px) {
+  .header-inner {
+    padding: 8px 16px;
+    gap: 14px;
+  }
+  .header-brand a {
+    display: none;
+  }
+  .header-brand p {
+    font-size: 16px;
+    color: white;
+    font-weight: 650;
+  }
+  .back {
+    padding: 8px 12px;
+  }
+  .layout {
+    display: block;
+    padding: 0 12px;
+    margin: 16px auto 32px;
+  }
+  .desktop-contents {
+    display: none;
+  }
+  article {
+    padding: 24px 18px;
+    border-radius: 14px;
+  }
+  h1 {
+    font-size: 28px;
+  }
+  h2 {
+    font-size: 20px;
+  }
+  .intro {
+    padding: 14px;
+  }
+  .mobile-contents {
+    display: block;
+    border: 1px solid #d9e6dc;
+    border-radius: 12px;
+    padding: 0 14px;
+    margin: 22px 0 28px;
+    background: #fafcf9;
+  }
+  .mobile-contents summary {
+    min-height: 48px;
+    padding: 12px 0;
+    color: #185c2c;
+    cursor: pointer;
+    font-weight: 650;
+  }
+  .mobile-contents a {
+    display: block;
+    padding: 10px 0;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+  .mobile-contents nav {
+    padding-bottom: 10px;
+  }
+  article > .contact {
+    padding: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+@media print {
+  body,
+  article {
+    background: white;
+  }
+  .policy-header,
+  .desktop-contents,
+  .mobile-contents,
+  footer,
+  .skip {
+    display: none;
+  }
+  .layout {
+    display: block;
+    margin: 0;
+    padding: 0;
+  }
+  article {
+    border: 0;
+    padding: 0;
+  }
+  a {
+    color: inherit;
+  }
+}
+
+</style></head><body><a class="skip" href="#policy">Đến nội dung chính sách</a><header class="policy-header"><div class="header-inner"><a id="policy-back" class="back" href="https://candientuquochung.com/" aria-label="Quay lại trang trước"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14"/></svg><span>Quay lại</span></a><div class="header-brand"><a href="https://candientuquochung.com/">CÂN ĐIỆN TỬ QUỐC HƯNG</a><p>QHS Scales · Quyền riêng tư</p></div></div></header><main class="layout" id="policy"><nav class="desktop-contents" aria-label="Nội dung chính sách"><strong>NỘI DUNG</strong><a href="#section-1">1. Đơn vị phụ trách và phạm vi áp dụng</a>
+<a href="#section-2">2. Thông tin được xử lý</a>
+<a href="#section-3">3. Mục đích sử dụng</a>
+<a href="#section-4">4. Người được truy cập và việc chia sẻ</a>
+<a href="#section-5">5. Lưu trữ trên thiết bị và máy chủ</a>
+<a href="#section-6">6. Bảo vệ thông tin</a>
+<a href="#section-7">7. Yêu cầu truy cập, chỉnh sửa và xóa dữ liệu</a>
+<a href="#section-8">8. Thay đổi chính sách và liên hệ</a><a href="#contact">Thông tin liên hệ</a></nav><article><h1>Chính sách quyền riêng tư</h1><p class="updated">QHS Scales · Cập nhật: 21/10/2026</p><p class="intro">QHS Scales là ứng dụng tra cứu dữ liệu, thống kê hoạt động trạm cân và quản trị trạm, tài khoản theo quyền được cấp. Chính sách này giải thích cách Quốc Hưng xử lý thông tin khi bạn sử dụng ứng dụng và dịch vụ máy chủ đi kèm.</p><details class="mobile-contents"><summary>Mục lục chính sách</summary><nav aria-label="Mục lục trên điện thoại"><a href="#section-1">1. Đơn vị phụ trách và phạm vi áp dụng</a>
+<a href="#section-2">2. Thông tin được xử lý</a>
+<a href="#section-3">3. Mục đích sử dụng</a>
+<a href="#section-4">4. Người được truy cập và việc chia sẻ</a>
+<a href="#section-5">5. Lưu trữ trên thiết bị và máy chủ</a>
+<a href="#section-6">6. Bảo vệ thông tin</a>
+<a href="#section-7">7. Yêu cầu truy cập, chỉnh sửa và xóa dữ liệu</a>
+<a href="#section-8">8. Thay đổi chính sách và liên hệ</a><a href="#contact">Thông tin liên hệ</a></nav></details><section id="section-1"><h2>1. Đơn vị phụ trách và phạm vi áp dụng</h2><p>CÔNG TY TNHH SX DV KT QUỐC HƯNG cung cấp ứng dụng QHS Scales. Đơn vị vận hành từng trạm cân quản lý dữ liệu nghiệp vụ và cấp tài khoản cho người được phép sử dụng. Quốc Hưng tiếp nhận các yêu cầu về quyền riêng tư và phối hợp với đơn vị vận hành trạm để xử lý đúng phạm vi trách nhiệm.</p>
+<p>Chính sách áp dụng cho QHS Scales và các chức năng máy chủ phục vụ ứng dụng. Khi mở website, gọi điện hoặc gửi email từ app, bạn sử dụng thêm dịch vụ của trình duyệt, nhà mạng hoặc nhà cung cấp email; các dịch vụ đó có chính sách riêng.</p></section>
+<section id="section-2"><h2>2. Thông tin được xử lý</h2><p>Thông tin tài khoản: mã tài khoản, tên đăng nhập, tên hiển thị hoặc email nếu được khai báo, vai trò, trạng thái hoạt động, trạm được liên kết và thông tin xác thực. Mật khẩu được gửi đến máy chủ để xác minh đăng nhập; ứng dụng không lưu mật khẩu nguyên văn để tự đăng nhập lại.</p>
+<p>Thông tin trạm: mã, tên, địa chỉ, số điện thoại và trạng thái hoạt động của trạm cân.</p>
+<p>Dữ liệu phiếu cân do hệ thống trạm cung cấp: số phiếu, biển số xe, mã/tên khách hàng, tên hàng hóa, thời gian cân, khối lượng, thành tiền, ghi chú và tài khoản tạo phiếu. Một số trường có thể nhận diện cá nhân hoặc gắn với hoạt động kinh doanh. Ứng dụng đọc các dữ liệu này để tra cứu và thống kê.</p>
+<p>Thông tin vận hành và an toàn: phiên đăng nhập, thời gian tạo/hết hạn/thu hồi phiên; lịch sử quản trị trạm, tài khoản; đường dẫn yêu cầu, từ khóa/bộ lọc gửi tới máy chủ, thời gian, trạng thái phản hồi và lỗi phục vụ hỗ trợ kỹ thuật. Tùy cấu hình hạ tầng, máy chủ hoặc dịch vụ lưu trữ có thể ghi địa chỉ IP và thông tin kết nối.</p>
+<p>Thông tin hỗ trợ: nội dung và thông tin liên hệ bạn chủ động cung cấp khi yêu cầu hỗ trợ hoặc thực hiện quyền đối với dữ liệu.</p></section>
+<section id="section-3"><h2>3. Mục đích sử dụng</h2><p>Thông tin được sử dụng để xác thực người dùng, kiểm soát quyền truy cập theo trạm; hiển thị phiếu cân, tổng quan và thống kê; quản lý trạm và tài khoản theo quyền; phát hiện truy cập bất thường, bảo vệ hệ thống, xử lý lỗi và hỗ trợ người dùng; giải quyết yêu cầu về dữ liệu và thực hiện nghĩa vụ lưu trữ áp dụng cho hoạt động của đơn vị vận hành.</p>
+<p>Phiên bản hiện tại không tích hợp SDK quảng cáo hoặc theo dõi quảng cáo và không sử dụng camera, micro, danh bạ hay vị trí GPS của thiết bị để cung cấp các chức năng nêu trên. Việc gọi số hỗ trợ được thực hiện qua ứng dụng gọi điện của thiết bị.</p></section>
+<section id="section-4"><h2>4. Người được truy cập và việc chia sẻ</h2><p>Người dùng trạm được xem dữ liệu của trạm mình; tài khoản quản trị công ty được chỉ định có thể truy cập dữ liệu nhiều trạm để quản trị và hỗ trợ. Người có quyền cần sử dụng thông tin đúng mục đích công việc, không tự ý cung cấp cho người ngoài.</p>
+<p>Thông tin có thể được xử lý bởi đơn vị cung cấp máy chủ, cơ sở dữ liệu, sao lưu hoặc hỗ trợ kỹ thuật trong phạm vi cần thiết để vận hành dịch vụ. Quốc Hưng yêu cầu các bên được giao xử lý thông tin áp dụng mức bảo vệ tương đương chính sách này và không sử dụng thông tin cho mục đích riêng ngoài phạm vi được giao.</p>
+<p>Quốc Hưng không bán dữ liệu cá nhân hoặc chia sẻ dữ liệu để phục vụ quảng cáo hành vi. Thông tin có thể được cung cấp khi có yêu cầu hợp lệ của cơ quan có thẩm quyền, khi cần bảo vệ quyền và an toàn của các bên, hoặc theo yêu cầu và sự cho phép hợp lệ của chủ thể có liên quan.</p></section>
+<section id="section-5"><h2>5. Lưu trữ trên thiết bị và máy chủ</h2><p>Ứng dụng lưu thông tin phiên và hồ sơ đăng nhập cần thiết để duy trì truy cập. Trên điện thoại, thông tin phiên được lưu bằng cơ chế lưu trữ bảo mật của nền tảng; bản web dùng bộ nhớ phiên của trình duyệt. Kết quả tra cứu được giữ tạm trong bộ nhớ ứng dụng. Đăng xuất xóa thông tin phiên và bộ nhớ đệm tra cứu do ứng dụng quản lý trên thiết bị.</p>
+<p>Dữ liệu tài khoản và nghiệp vụ được lưu trong thời gian cần thiết để cung cấp dịch vụ, đối soát và thực hiện nghĩa vụ của đơn vị vận hành trạm. Sau khi ngừng sử dụng dịch vụ hoặc có yêu cầu xóa, dữ liệu được xem xét xóa, ẩn danh hoặc tiếp tục lưu theo thỏa thuận với đơn vị vận hành và yêu cầu lưu trữ áp dụng. Bản sao lưu được xử lý theo vòng đời sao lưu của hệ thống.</p>
+<p>Phiên đăng nhập có thời hạn; hết hạn hoặc thu hồi quyền ngăn phiên tiếp tục truy cập, không đồng nghĩa mọi bản ghi phiên hoặc lịch sử nghiệp vụ đã bị xóa. Gỡ ứng dụng hoặc đăng xuất không tự xóa tài khoản và phiếu cân trên máy chủ.</p></section>
+<section id="section-6"><h2>6. Bảo vệ thông tin</h2><p>Hệ thống áp dụng xác thực, phân quyền theo trạm, thu hồi phiên khi thay đổi thông tin truy cập và ghi nhận các thao tác quản trị. Bạn cần bảo vệ mật khẩu, thiết bị và chỉ chia sẻ thông tin cho người có thẩm quyền. Khi nghi ngờ bị lộ tài khoản hoặc truy cập sai phạm vi, hãy liên hệ ngay Quốc Hưng và quản trị trạm.</p>
+<p>Không có biện pháp kỹ thuật nào bảo đảm an toàn tuyệt đối. Quốc Hưng tiếp nhận phản ánh, kiểm tra và phối hợp xử lý sự cố để hạn chế ảnh hưởng tới người dùng.</p></section>
+<section id="section-7"><h2>7. Yêu cầu truy cập, chỉnh sửa và xóa dữ liệu</h2><p>Bạn có thể liên hệ Quốc Hưng qua email hoặc số điện thoại bên dưới để yêu cầu thông tin về dữ liệu của mình, chỉnh sửa thông tin không chính xác, hạn chế xử lý, rút lại sự cho phép trong phạm vi áp dụng hoặc yêu cầu xóa tài khoản/dữ liệu cá nhân. Vui lòng cung cấp tên đăng nhập, mã/tên trạm và nội dung yêu cầu; không gửi mật khẩu hoặc mã phiên đăng nhập.</p>
+<p>Quốc Hưng có thể cần xác minh danh tính và phối hợp với quản trị trạm để tránh xóa hoặc tiết lộ dữ liệu của người khác. Việc ngừng xử lý thông tin cần thiết cho đăng nhập và phân quyền có thể làm tài khoản không tiếp tục sử dụng được dịch vụ.</p>
+<p>Yêu cầu xóa tài khoản không tự động xóa toàn bộ chứng từ cân thuộc đơn vị vận hành. Thông tin cần giữ để đối soát, thực hiện nghĩa vụ lưu trữ hoặc xử lý tranh chấp được giới hạn sử dụng theo mục đích giữ lại; Quốc Hưng sẽ thông tin về phạm vi xử lý yêu cầu và các phần phải tiếp tục lưu nếu có.</p></section>
+<section id="section-8"><h2>8. Thay đổi chính sách và liên hệ</h2><p>Khi chức năng hoặc cách xử lý dữ liệu thay đổi, Quốc Hưng sẽ cập nhật chính sách và ngày cập nhật. Thay đổi quan trọng về mục đích xử lý hoặc phạm vi chia sẻ sẽ được thông báo qua kênh phù hợp và xin sự cho phép khi cần.</p>
+<p>Mọi câu hỏi, phản ánh hoặc yêu cầu về quyền riêng tư của QHS Scales có thể gửi tới Quốc Hưng theo thông tin liên hệ bên dưới.</p></section><section id="contact" class="contact"><h2>Thông tin liên hệ</h2><p><strong>CÔNG TY TNHH SX DV KT QUỐC HƯNG</strong></p><p>Số 78, Đường 10/3, P. Buôn Ma Thuột, Tỉnh Đắk Lắk, Việt Nam</p><p>Email: <a href="mailto:info@candientuquochung.com">info@candientuquochung.com</a><br>Điện thoại: <a href="tel:0981912347">0981 912 347</a><br>Website: <a href="https://candientuquochung.com/">candientuquochung.com</a></p></section></article></main><footer>© Quốc Hưng · QHS Scales</footer><script>
+const header = document.querySelector('.policy-header');
+const updateHeaderOffset = () => document.documentElement.style.setProperty('--header-offset', (header.getBoundingClientRect().height + 16) + 'px');
+updateHeaderOffset();
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateHeaderOffset).observe(header);
+document.getElementById('policy-back').addEventListener('click', (event) => {
+  if (window.history.length > 1) { event.preventDefault(); window.history.back(); }
+});
+document.querySelectorAll('a[href^="#"]').forEach((link) => link.addEventListener('click', (event) => {
+  const target = document.getElementById(link.getAttribute('href').slice(1));
+  if (!target) return;
+  event.preventDefault();
+  link.closest('details')?.removeAttribute('open');
+  target.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}));
+</script></body></html>

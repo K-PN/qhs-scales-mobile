@@ -1,0 +1,14 @@
+node_modules/
+**/.env
+**/.env.local
+**/.env.*.local
+backend/dist/
+mobile/.expo/
+mobile/dist/
+artifacts/
+release/
+*.log
+# Legacy SQL dump contains private data and must not be committed.
+*.sql
+!backend/database/*.sql
+

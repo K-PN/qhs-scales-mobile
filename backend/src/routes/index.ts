@@ -1,0 +1,13 @@
+import { Router } from "express";
+import auth from "./auth.js";
+import admin from "./admin.js";
+import station from "./customer.js";
+import reports from "./reports.js";
+import weighings from "./weighings.js";
+const router = Router();
+router.use("/auth", auth);
+router.use("/admin", admin);
+router.use("/station", station);
+router.use("/reports", reports);
+router.use("/weighings", weighings);
+export default router;

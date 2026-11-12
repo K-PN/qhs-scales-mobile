@@ -1,0 +1,22 @@
+{
+  "name": "qhs-scales-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "backend",
+    "mobile"
+  ],
+  "scripts": {
+    "backend:dev": "npm --workspace backend run dev",
+    "backend:build": "npm --workspace backend run build",
+    "backend:start": "npm --workspace backend run start",
+    "mobile:start": "npm --workspace mobile run start",
+    "mobile:web": "npm --workspace mobile run web",
+    "test:access": "node --import tsx --test backend/tests/access.test.ts backend/tests/readiness.test.ts",
+    "test:integration": "node scripts/verify-v3.cjs",
+    "test:api-response": "node --import tsx --test scripts/api-response.test.ts",
+    "privacy:export": "node --import tsx scripts/export-privacy-policy.ts",
+    "store:prepare": "node scripts/prepare-store-release.cjs",
+    "store:build": "node scripts/build-stores.cjs"
+  }
+}
