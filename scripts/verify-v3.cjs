@@ -785,7 +785,7 @@ async function login(kind, username, password) {
       .getByRole("button", { name: "Ẩn mật khẩu", exact: true })
       .click();
     await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
-    await page.getByText("Doanh thu", { exact: true }).waitFor();
+    await page.getByText("Thành tiền", { exact: true }).waitFor();
     await page.getByText("60.000", { exact: false }).first().waitFor();
     check("grouped statistics load only on demand", groupedRequests, 0);
     await page
@@ -988,29 +988,30 @@ async function login(kind, username, password) {
     await page.getByLabel("Tài khoản", { exact: true }).fill("localadmin");
     await page.getByLabel("Mật khẩu", { exact: true }).fill("Station-test-123");
     await page.getByLabel("Mật khẩu", { exact: true }).press("Enter");
-    await page.getByText("Tổng quan hệ thống", { exact: true }).waitFor();
+    await page.getByText("Quản trị hệ thống", { exact: true }).waitFor();
     await page.getByText("150.000", { exact: false }).first().waitFor();
     await verifyTabLabels("admin");
     await page.screenshot({ path: path.join(dir, "admin-overview.png") });
     await page.getByRole("tab", { name: /Trạm cân/ }).click();
     await page
-      .getByRole("button", { name: "+ Thêm trạm", exact: true })
+      .getByRole("button", { name: "Thêm trạm", exact: true })
       .click();
-    await page.getByLabel("TÊN TRẠM CÂN", { exact: true }).fill("Trạm mới");
+    await page.getByLabel("Tên trạm cân", { exact: true }).fill("Trạm mới");
     await page
       .getByRole("button", { name: "Tạo trạm cân", exact: true })
       .click();
     await page.getByText("Trạm mới", { exact: true }).waitFor();
-    await page.getByRole("tab", { name: /Nhân sự/ }).click();
+    await page.getByRole("tab", { name: /Tài khoản/ }).click();
     await page.setViewportSize({ width: 320, height: 568 });
     await page
-      .getByRole("button", { name: "+ Tạo tài khoản", exact: true })
+      .getByRole("button", { name: "Thêm tài khoản", exact: true })
       .click();
-    await page.getByLabel("MÃ TRẠM CÂN", { exact: true }).fill("1");
+    await page.getByRole("button", { name: "Chọn trạm cân", exact: true }).click();
+    await page.getByRole("button", { name: / · #1$/ }).click();
     await page
-      .getByLabel("TÊN ĐĂNG NHẬP · TỐI ĐA 10 KÝ TỰ", { exact: true })
+      .getByLabel("Tên đăng nhập", { exact: true })
       .fill("browser");
-    await page.getByLabel("MẬT KHẨU", { exact: true }).fill("Browser-test-123");
+    await page.getByLabel("Mật khẩu", { exact: true }).fill("Browser-test-123");
     await page.setViewportSize({ width: 320, height: 380 });
     await page.getByRole("button", { name: "Trạm cân", exact: true }).click();
     await page
@@ -1022,7 +1023,7 @@ async function login(kind, username, password) {
     await page.screenshot({
       path: path.join(dir, "admin-accounts-desktop.png"),
     });
-    await page.getByRole("tab", { name: /Tài khoản$/ }).click();
+    await page.getByRole("tab", { name: /Hồ sơ$/ }).click();
     await page.getByRole("button", { name: "Đăng xuất", exact: true }).click();
     await page.getByLabel("Tài khoản", { exact: true }).waitFor();
   }

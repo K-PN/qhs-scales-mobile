@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { randomUUID, randomBytes } from "node:crypto";
 import { z } from "zod";
 import rateLimit from "express-rate-limit";
-import { db } from "../config/db.js";
+import { databaseSource, databaseSources, db, dbFor } from "../config/db.js";
 import { env } from "../config/env.js";
 import { loadUser, publicUser, requireAuth } from "../middleware/auth.js";
 import { equalHash, legacyHash, tokenHash } from "../utils/security.js";
@@ -38,10 +38,11 @@ router.post(
         username: z.string().trim().min(1).max(255),
         password: z.string().min(1).max(128),
         stationId: z.number().int().positive().optional(),
+        source: databaseSource.optional(),
       })
       .parse(req.body);
     const candidates: AppUser[] = [];
-    {
+    if (!b.source || b.source === "db1") {
       const [rows] = await db.execute(
         "SELECT id,password_hash FROM app_users WHERE email=? AND role='admin' AND status=1",
         [b.username],
@@ -52,24 +53,42 @@ router.post(
         if (user) candidates.push(user);
       }
     }
-    {
-      const [rows] = await db.execute(
+    const passwordHash = legacyHash(b.password);
+    const sources = b.source ? [b.source] : databaseSources;
+    let unavailable = false;
+    const results = await Promise.allSettled(sources.map(async (source) => {
+      const [rows] = await dbFor(source).execute(
         "SELECT id,password FROM tbusers WHERE username=?" +
           (b.stationId ? " AND idusergroup=?" : ""),
         b.stationId ? [b.username, b.stationId] : [b.username],
       );
-      const users = rows as any[];
+      const users = rows as { id: number; password: string }[];
+      const matches: AppUser[] = [];
       for (const u of users)
-        if (equalHash(u.password, legacyHash(b.password))) {
-          const user = await loadUser("station", u.id);
-          if (user) candidates.push(user);
+        if (typeof u.password === "string" && equalHash(u.password, passwordHash)) {
+          const user = await loadUser(source === "db1" ? "station" : "station2", u.id);
+          if (user) matches.push(user);
         }
+      return matches;
+    }));
+    for (const result of results) {
+      if (result.status === "fulfilled") candidates.push(...result.value);
+      else unavailable = true;
     }
+    if (unavailable && (!b.source && sources.length > 1))
+      return res.status(409).json({
+        message: "Một nguồn đăng nhập đang gián đoạn. Hãy chọn database của tài khoản.",
+        databaseSources,
+      });
+    if (unavailable) throw new HttpError(503, "Nguồn đăng nhập chưa sẵn sàng. Vui lòng thử lại.");
     if (candidates.length > 1)
       return res
         .status(409)
         .json({
-          message: "Tên tài khoản trùng nhau. Vui lòng nhập thêm mã trạm.",
+          message: sources.length > 1
+            ? "Thông tin đăng nhập trùng nhau. Hãy chọn database hoặc nhập mã trạm."
+            : "Tên tài khoản trùng nhau. Vui lòng nhập thêm mã trạm.",
+          databaseSources,
         });
     const user = candidates[0];
     if (!user)
@@ -125,8 +144,17 @@ router.get(
 );
 router.post(
   "/logout",
-  requireAuth,
+  (req, res, next) => {
+    if (req.body?.refreshToken === undefined) return requireAuth(req, res, next);
+    next();
+  },
   route(async (req, res) => {
+    if (req.body?.refreshToken !== undefined) {
+      const { refreshToken } = z.object({ refreshToken: z.string().regex(/^[a-f0-9]{96}$/) }).parse(req.body);
+      await db.execute("UPDATE mobile_sessions SET revoked_at=NOW() WHERE refresh_hash=? AND revoked_at IS NULL",
+        [tokenHash(refreshToken)]);
+      return res.json({ message: "Đã đăng xuất." });
+    }
     await db.execute("UPDATE mobile_sessions SET revoked_at=NOW() WHERE id=?", [
       req.sessionId!,
     ]);

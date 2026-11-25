@@ -1,3 +1,5 @@
+import type { DatabaseSource } from "../store/authStore";
+
 export interface Weighing {
   price_total: number | string | null;
   id: number;
@@ -22,6 +24,10 @@ export interface Station {
   address: string;
   phonenumber: string;
   enabled: boolean;
+  stationType?: "truck" | "durian";
+  source?: DatabaseSource;
+  dataSource?: DatabaseSource;
+  dataStationId?: number;
   version: string;
   startdate: string | null;
   enddate: string | null;
@@ -30,6 +36,10 @@ export interface Account {
   id: number;
   username: string;
   stationId: number;
+  stationName?: string | null;
+  stationEnabled?: boolean;
+  stationType?: "truck" | "durian";
+  durianRole?: "none" | "operator" | "admin";
   roleId: number;
   roleName: string;
   enabled: boolean;

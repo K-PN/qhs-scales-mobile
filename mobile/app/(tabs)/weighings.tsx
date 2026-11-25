@@ -1,23 +1,23 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FlatList,
   Text,
   View,
   Pressable,
   RefreshControl,
-  TextInput,
   ActivityIndicator,
   Keyboard,
 } from "react-native";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { Ionicons } from "@expo/vector-icons";
 import { api, queryString } from "../../lib/api";
 import { Page, Weighing, Station } from "../../lib/types";
 import { c, ui, number, dateTime, localDay } from "../../lib/theme";
-import { useAuthStore } from "../../store/authStore";
+import { useAuthStore, userScope } from "../../store/authStore";
 import AppHeader from "../../components/AppHeader";
+import WeighingDetail from "../../components/WeighingDetail";
 import Calendar from "../../components/Calendar";
-import { Badge, Button, Chips, Field, Sheet, State } from "../../components/UI";
+import { ReceiptRow, SearchBar, Segments } from "../../components/BrowseUI";
+import { Button, Chips, Field, Sheet, State } from "../../components/UI";
 const defaults = {
   q: "",
   startDate: "",
@@ -25,69 +25,6 @@ const defaults = {
   status: "all",
   stationId: "",
 };
-function Detail({ id, onClose }: { id: number; onClose: () => void }) {
-  const user = useAuthStore((s) => s.user)!;
-  const q = useQuery({
-    queryKey: ["weighing", user.role, user.id, id],
-    queryFn: () => api<{ item: Weighing }>("/weighings/" + id),
-  });
-  const w = q.data?.item;
-  return (
-    <Sheet visible title="Chi tiết phiếu cân" onClose={onClose}>
-      <State
-        loading={q.isPending}
-        error={q.error}
-        onRetry={() => void q.refetch()}
-      />
-      {w ? (
-        <>
-          <View
-            style={[ui.card, { backgroundColor: c.navy, borderColor: c.navy }]}
-          >
-            <Text style={{ fontSize: 12, color: "#DBEEDC" }}>
-              PHIẾU {w.formcode}
-            </Text>
-            <Text style={{ fontSize: 30, fontWeight: "800", color: "white" }}>
-              {w.truct_no}
-            </Text>
-            <Text style={{ color: "#DBEEDC" }}>{w.station_name?.trim()}</Text>
-          </View>
-          <Badge
-            label={w.weight_2 === null ? "Chờ cân lần 2" : "Đã cân lần 2"}
-            tone={w.weight_2 === null ? "amber" : "green"}
-          />
-          <View style={ui.card}>
-            {[
-              ["Khách hàng", w.customer_name || "—"],
-              ["Hàng hóa", w.items_name || "—"],
-              ["Người cân", w.creator_name || "—"],
-              ["Thời gian vào", dateTime(w.date_in)],
-              ["Thời gian ra", dateTime(w.date_out)],
-              ["Cân lần 1", number(w.weight_1) + " kg"],
-              [
-                "Cân lần 2",
-                w.weight_2 === null ? "—" : number(w.weight_2) + " kg",
-              ],
-              [
-                "Khối lượng hàng",
-                w.net_weight === null ? "—" : number(w.net_weight) + " kg",
-              ],
-              ["Thành tiền", number(w.price_total) + " đ"],
-              ...(w.notes ? [["Ghi chú", w.notes]] : []),
-            ].map(([label, value]) => (
-              <View key={label} style={{ gap: 4, paddingVertical: 5 }}>
-                <Text style={ui.muted}>{label}</Text>
-                <Text selectable style={ui.body}>
-                  {value}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </>
-      ) : null}
-    </Sheet>
-  );
-}
 export default function Weighings() {
   const user = useAuthStore((s) => s.user)!;
   const [search, setSearch] = useState(""),
@@ -107,7 +44,7 @@ export default function Weighings() {
     return () => clearTimeout(timer);
   }, [search]);
   const q = useInfiniteQuery({
-    queryKey: ["weighings", user.role, user.id, filter],
+    queryKey: ["weighings", ...userScope(user), filter],
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
       api<Page<Weighing>>(
@@ -117,7 +54,7 @@ export default function Weighings() {
       last.page * last.limit < last.total ? last.page + 1 : undefined,
   });
   const stations = useQuery({
-    queryKey: ["stationLookup", stationSearch],
+    queryKey: ["stationLookup", ...userScope(user), stationSearch],
     queryFn: () =>
       api<Page<Station>>(
         "/admin/stations?" + queryString({ q: stationSearch, limit: 50 }),
@@ -164,13 +101,47 @@ export default function Weighings() {
     setOpen(false);
     Keyboard.dismiss();
   }
+  function reset() {
+    setDraft(defaults);
+    setFilter({ ...defaults, q: search.trim() });
+    setPeriod("all");
+    setOpen(false);
+  }
+  function showFilters() {
+    setDraft(filter);
+    setCalendar(null);
+    setError("");
+    setOpen(true);
+  }
   return (
     <View style={ui.screen}>
-      <AppHeader />
+      <AppHeader title="Dữ liệu cân" onRefresh={() => void q.refetch()} />
+      <View style={[ui.content, { paddingVertical: 10, gap: 8 }]}>
+        <SearchBar
+          label="Tìm phiếu cân"
+          placeholder="Biển số, số phiếu, khách hàng"
+          value={search}
+          onChange={setSearch}
+          filter={showFilters}
+          active={active}
+        />
+        <Segments
+          value={period}
+          onChange={preset}
+          items={[
+            { value: "all", label: "Tất cả" },
+            { value: "today", label: "Hôm nay" },
+            { value: "month", label: "Tháng này" },
+            ...(period === "custom"
+              ? [{ value: "custom", label: "Tùy chọn" }]
+              : []),
+          ]}
+        />
+      </View>
       <FlatList
         data={items}
         keyExtractor={(w) => String(w.id)}
-        contentContainerStyle={ui.content}
+        contentContainerStyle={[ui.content, { paddingTop: 0, gap: 8 }]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         refreshControl={
@@ -186,136 +157,32 @@ export default function Weighings() {
             void q.fetchNextPage();
         }}
         ListHeaderComponent={
-          <View style={{ gap: 14, marginBottom: 14 }}>
-            <View style={[ui.row, { justifyContent: "space-between" }]}>
-              <Text style={ui.title}>Dữ liệu cân</Text>
-              <Text style={ui.muted}>{number(total)} phiếu</Text>
-            </View>
-            <View style={ui.row}>
-              <View
-                style={[
-                  ui.row,
-                  {
-                    flex: 1,
-                    backgroundColor: "white",
-                    borderWidth: 1,
-                    borderColor: c.line,
-                    borderRadius: 14,
-                    paddingHorizontal: 12,
-                    height: 48,
-                    gap: 8,
-                  },
-                ]}
-              >
-                <Ionicons name="search-outline" color={c.muted} size={20} />
-                <TextInput
-                  accessibilityLabel="Tìm phiếu cân"
-                  placeholder="Biển số, mã phiếu, khách hàng"
-                  placeholderTextColor={c.muted}
-                  value={search}
-                  onChangeText={setSearch}
-                  returnKeyType="search"
-                  onSubmitEditing={() => Keyboard.dismiss()}
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    fontSize: 14,
-                    color: c.text,
-                    paddingVertical: 10,
-                  }}
-                />
-                {search ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Xóa tìm kiếm"
-                    onPress={() => setSearch("")}
-                    hitSlop={10}
-                  >
-                    <Ionicons name="close-circle" color={c.muted} size={18} />
-                  </Pressable>
-                ) : null}
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Bộ lọc"
-                onPress={() => {
-                  Keyboard.dismiss();
-                  setDraft(filter);
-                  setCalendar(null);
-                  setError("");
-                  setOpen(true);
-                }}
-                style={{
-                  padding: 13,
-                  borderRadius: 14,
-                  backgroundColor: active ? c.blue : c.soft,
-                }}
-              >
-                <Ionicons
-                  name="options-outline"
-                  size={22}
-                  color={active ? "white" : c.blue}
-                />
-              </Pressable>
-            </View>
-            <Chips
-              value={period}
-              onChange={preset}
-              items={[
-                { value: "all", label: "Tất cả" },
-                { value: "today", label: "Hôm nay" },
-                { value: "month", label: "Tháng này" },
-                ...(period === "custom"
-                  ? [{ value: "custom", label: "Tùy chọn" }]
-                  : []),
-              ]}
-            />
+          q.isPending || (q.error && !q.data) ? (
             <State
               loading={q.isPending}
-              error={q.error && !q.data ? q.error : null}
+              error={q.error}
               onRetry={() => void q.refetch()}
             />
-          </View>
+          ) : total > 0 ? (
+            <Text style={ui.muted}>{number(total)} phiếu</Text>
+          ) : null
         }
         ListEmptyComponent={!q.isPending && !q.error ? <State empty /> : null}
         renderItem={({ item: w }) => (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={"Xem phiếu " + w.formcode}
+          <ReceiptRow
+            title={w.truct_no || "Chưa có biển số"}
+            meta={w.formcode + " · " + dateTime(w.date_in)}
+            secondary={
+              user.role === "admin"
+                ? w.station_name?.trim()
+                : w.customer_name || w.items_name || undefined
+            }
+            value={w.net_weight === null ? "—" : number(w.net_weight)}
+            unit={w.net_weight === null ? undefined : "kg"}
+            pending={w.weight_2 === null}
+            label={"Xem phiếu " + w.formcode}
             onPress={() => setSelected(w.id)}
-            style={[ui.card, { marginBottom: 10, padding: 16, gap: 8 }]}
-          >
-            <View style={[ui.row, { justifyContent: "space-between" }]}>
-              <Text style={[ui.heading, { fontSize: 20 }]}>{w.truct_no}</Text>
-              <Text style={{ fontSize: 18, fontWeight: "800", color: c.blue }}>
-                {w.net_weight === null ? "—" : number(w.net_weight)}{" "}
-                <Text style={{ fontSize: 12, fontWeight: "400" }}>kg</Text>
-              </Text>
-            </View>
-            <Text numberOfLines={1} style={ui.muted}>
-              {w.customer_name || w.items_name || "—"}
-            </Text>
-            <View style={[ui.row, { justifyContent: "space-between" }]}>
-              <Text style={{ fontSize: 12, color: c.muted }}>
-                #{w.formcode} · {dateTime(w.date_in)}
-              </Text>
-              {w.weight_2 === null ? (
-                <Ionicons
-                  accessibilityLabel="Chờ cân lần 2"
-                  name="time-outline"
-                  size={18}
-                  color={c.amber}
-                />
-              ) : (
-                <Ionicons name="checkmark-circle" size={18} color={c.blue} />
-              )}
-            </View>
-            {user.role === "admin" ? (
-              <Text numberOfLines={1} style={{ fontSize: 12, color: c.muted }}>
-                {w.station_name?.trim() || "—"}
-              </Text>
-            ) : null}
-          </Pressable>
+          />
         )}
         ListFooterComponent={
           q.isFetchingNextPage ? (
@@ -336,9 +203,24 @@ export default function Weighings() {
         }
       />
       {selected !== null ? (
-        <Detail id={selected} onClose={() => setSelected(null)} />
+        <WeighingDetail id={selected} stationId={filter.stationId} onClose={() => setSelected(null)} />
       ) : null}
-      <Sheet visible={open} title="Bộ lọc" onClose={() => setOpen(false)}>
+      <Sheet
+        visible={open}
+        title="Bộ lọc"
+        onClose={() => setOpen(false)}
+        footer={
+          <View
+            style={[
+              ui.row,
+              { justifyContent: "space-between", flexWrap: "wrap" },
+            ]}
+          >
+            <Button secondary title="Xóa bộ lọc" onPress={reset} />
+            <Button title="Áp dụng" onPress={apply} />
+          </View>
+        }
+      >
         <Text style={ui.label}>Thời gian</Text>
         <View style={ui.row}>
           {(["startDate", "endDate"] as const).map((key) => (
@@ -406,7 +288,7 @@ export default function Weighings() {
             >
               <Text style={ui.body}>Tất cả trạm</Text>
             </Pressable>
-            {stations.data?.items.map((s) => (
+            {stations.data?.items.filter((s) => s.stationType !== "durian").map((s) => (
               <Pressable
                 accessibilityRole="button"
                 key={s.id}
@@ -426,17 +308,6 @@ export default function Weighings() {
           </>
         ) : null}
         {error ? <Text style={ui.error}>{error}</Text> : null}
-        <Button title="Áp dụng" onPress={apply} />
-        <Button
-          secondary
-          title="Xóa bộ lọc"
-          onPress={() => {
-            setDraft(defaults);
-            setFilter({ ...defaults, q: search.trim() });
-            setPeriod("all");
-            setOpen(false);
-          }}
-        />
       </Sheet>
     </View>
   );

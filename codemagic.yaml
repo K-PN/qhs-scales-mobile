@@ -1,0 +1,65 @@
+workflows:
+  ios-app-store:
+    name: Quốc Hưng Scales iOS
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: qhs_apple
+    environment:
+      xcode: "26.4"
+      cocoapods: default
+      node: v22.23.2
+      groups:
+        - qhs_scales_production
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.doluongquochung.scales
+      vars:
+        QHS_STORE_BUILD: "1"
+    scripts:
+      - name: Check the production API
+        script: |
+          node --input-type=module <<'NODE'
+          const endpoint = new URL(process.env.EXPO_PUBLIC_API_URL);
+          if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password ||
+              endpoint.search || endpoint.hash) {
+            throw new Error('EXPO_PUBLIC_API_URL must be a public HTTPS base URL.');
+          }
+          const healthUrl = endpoint.href.replace(/\/$/, '') + '/health';
+          const response = await fetch(healthUrl, { signal: AbortSignal.timeout(15000) });
+          if (!response.ok || (await response.json()).appReady !== true) {
+            throw new Error('The production mobile API did not report appReady.');
+          }
+          NODE
+      - name: Prepare and typecheck Expo SDK 54
+        script: |
+          set -e
+          npm run store:prepare
+          cd release/store-20261023
+          npm ci --no-audit --no-fund
+          npm run typecheck
+      - name: Generate the native iOS project
+        script: |
+          set -e
+          cd release/store-20261023
+          export QHS_IOS_BUILD_NUMBER="${PROJECT_BUILD_NUMBER:-${BUILD_NUMBER:?}}"
+          npx expo prebuild --platform ios --no-install
+          cd ios
+          pod install
+      - name: Sign and archive the iOS app
+        script: |
+          set -e
+          cd release/store-20261023
+          workspace="$(find ios -maxdepth 1 -type d -name '*.xcworkspace' -print -quit)"
+          test -n "$workspace"
+          scheme="$(basename "$workspace" .xcworkspace)"
+          xcode-project use-profiles
+          xcode-project build-ipa --workspace "$workspace" --scheme "$scheme"
+    artifacts:
+      - release/store-20261023/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: false

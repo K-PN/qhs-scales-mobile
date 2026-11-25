@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Keyboard, Text, View } from "react-native";
 import { localDay, ui } from "../lib/theme";
 import Calendar from "./Calendar";
-import { Button, Chips, Field, Sheet } from "./UI";
+import { Button, Field, Sheet } from "./UI";
+import { Segments } from "./BrowseUI";
 
 export interface ReportPeriod {
   startDate: string;
@@ -73,7 +74,7 @@ export default function OverviewPeriod({
   }
   return (
     <View style={{ gap: 10 }}>
-      <Chips
+      <Segments
         value={period}
         onChange={selectPeriod}
         items={[
@@ -83,9 +84,11 @@ export default function OverviewPeriod({
           { value: "custom", label: "Tùy chọn" },
         ]}
       />
-      <Text style={ui.muted}>
-        {displayDate(value.startDate)} – {displayDate(value.endDate)}
-      </Text>
+      {period === "custom" ? (
+        <Text style={ui.muted}>
+          {displayDate(value.startDate)} – {displayDate(value.endDate)}
+        </Text>
+      ) : null}
       <Sheet
         visible={open}
         title="Khoảng thời gian tổng quan"

@@ -40,6 +40,10 @@ app.use(helmet());
 app.use(compression());
 app.use(express.json({ limit: "2mb" }));
 app.use(morgan("dev"));
+app.use((_req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
 
 app.use(
   rateLimit({

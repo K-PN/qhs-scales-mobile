@@ -14,6 +14,7 @@
     "mobile:web": "npm --workspace mobile run web",
     "test:access": "node --import tsx --test backend/tests/access.test.ts backend/tests/readiness.test.ts",
     "test:integration": "node scripts/verify-v3.cjs",
+    "test:durian": "node scripts/verify-durian.cjs",
     "test:api-response": "node --import tsx --test scripts/api-response.test.ts",
     "privacy:export": "node --import tsx scripts/export-privacy-policy.ts",
     "store:prepare": "node scripts/prepare-store-release.cjs",

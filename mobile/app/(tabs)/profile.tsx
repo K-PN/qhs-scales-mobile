@@ -4,9 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { api, logout } from "../../lib/api";
 import { c, ui } from "../../lib/theme";
-import { useAuthStore } from "../../store/authStore";
+import { useAuthStore, userScope } from "../../store/authStore";
 import AppHeader from "../../components/AppHeader";
-import Brand from "../../components/Brand";
 import SupportContacts from "../../components/SupportContacts";
 import { Button, State } from "../../components/UI";
 import PrivacyPolicyLink from "../../components/PrivacyPolicyLink";
@@ -22,7 +21,7 @@ export default function Profile() {
   const user = useAuthStore((s) => s.user)!;
   const [busy, setBusy] = useState(false);
   const q = useQuery({
-    queryKey: ["stationProfile", user.role, user.id, user.stationId],
+    queryKey: ["stationProfile", ...userScope(user)],
     queryFn: () => api<ProfileData>("/station/profile"),
   });
   const station = q.data?.station;
@@ -37,7 +36,10 @@ export default function Profile() {
   }
   return (
     <View style={ui.screen}>
-      <AppHeader />
+      <AppHeader
+        title={user.role === "admin" ? "Hồ sơ" : "Tài khoản"}
+        showAction={false}
+      />
       <ScrollView contentContainerStyle={ui.content}>
         <Text style={ui.title}>Thông tin trạm</Text>
         <State
@@ -47,13 +49,10 @@ export default function Profile() {
         />
         {q.data ? (
           <View style={ui.card}>
-            <View style={{ alignItems: "center", paddingVertical: 20 }}>
-              <Brand width={225} />
-            </View>
             <Text style={[ui.heading, { fontSize: 22 }]}>
               {station?.name?.trim() || "Cân điện tử Quốc Hưng"}
             </Text>
-            <View style={ui.separator} />
+            {station?.address || station?.phonenumber ? <View style={ui.separator} /> : null}
             {station?.address ? (
               <View
                 style={[
@@ -90,6 +89,7 @@ export default function Profile() {
         <PrivacyPolicyLink />
         <Button
           title="Đăng xuất"
+          icon="log-out-outline"
           secondary
           busy={busy}
           onPress={() => void signout()}

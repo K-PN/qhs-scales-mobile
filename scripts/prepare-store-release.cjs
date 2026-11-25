@@ -120,9 +120,15 @@ for (const [name, data] of Object.entries({
     JSON.stringify(data, null, 2) + "\n",
   );
 }
+fs.copyFileSync(path.join(__dirname, "store-package-lock.json"), path.join(target, "package-lock.json"));
 fs.writeFileSync(
   path.join(target, "app.config.js"),
   `module.exports = ({ config }) => {
+  const buildNumber = process.env.QHS_IOS_BUILD_NUMBER;
+  if (buildNumber) {
+    if (!/^[1-9]\\d*$/.test(buildNumber)) throw new Error('Invalid iOS build number.');
+    config.ios = { ...config.ios, buildNumber };
+  }
   if (process.env.QHS_STORE_BUILD === '1') {
     const raw = process.env.EXPO_PUBLIC_API_URL;
     let url;

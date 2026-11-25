@@ -1,6 +1,7 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Modal,
   Pressable,
   ScrollView,
@@ -10,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  type ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,31 +22,58 @@ export function Button({
   busy = false,
   secondary = false,
   disabled = false,
+  danger = false,
+  icon,
 }: {
   title: string;
   onPress: () => void;
   busy?: boolean;
   secondary?: boolean;
   disabled?: boolean;
+  danger?: boolean;
+  icon?: React.ComponentProps<typeof Ionicons>["name"];
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={title}
+      accessibilityState={{ disabled: disabled || busy, busy }}
       disabled={disabled || busy}
       onPress={onPress}
-      style={[
+      style={({ pressed }) => [
         ui.button,
-        secondary && { backgroundColor: c.soft },
+        { flexDirection: "row", gap: 8 },
+        secondary && {
+          backgroundColor: c.white,
+          borderColor: c.line,
+          borderWidth: 1,
+        },
+        danger && { backgroundColor: c.red },
+        pressed && { opacity: 0.8 },
         (disabled || busy) && { opacity: 0.5 },
       ]}
     >
       {busy ? (
         <ActivityIndicator color={secondary ? c.blue : c.white} />
       ) : (
-        <Text style={[ui.buttonText, secondary && { color: c.blue }]}>
-          {title}
-        </Text>
+        <>
+          {icon ? (
+            <Ionicons
+              name={icon}
+              size={19}
+              color={secondary ? c.navy : c.white}
+            />
+          ) : null}
+          <Text
+            style={[
+              ui.buttonText,
+              { flexShrink: 1 },
+              secondary && { color: c.navy },
+            ]}
+          >
+            {title}
+          </Text>
+        </>
       )}
     </Pressable>
   );
@@ -123,15 +152,20 @@ export function Chips({
             ui.pill,
             {
               backgroundColor: item.value === value ? c.blue : c.soft,
-              paddingVertical: 10,
+              minHeight: 44,
+              justifyContent: "center",
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: item.value === value ? c.blue : c.line,
+              paddingVertical: 8,
             },
           ]}
         >
           <Text
             style={{
-              color: item.value === value ? c.white : c.muted,
+              color: item.value === value ? c.white : c.navy,
               fontWeight: "600",
-              fontSize: 13,
+              fontSize: 14,
             }}
           >
             {item.label}
@@ -150,8 +184,8 @@ export function Badge({
 }) {
   const colors = {
     blue: [c.blue, c.soft],
-    green: [c.teal, "#EAF4EB"],
-    amber: [c.amber, "#FFF5DD"],
+    green: [c.navy, c.soft],
+    amber: [c.amber, c.warning],
     red: [c.red, "#FCECEE"],
   };
   return (
@@ -180,9 +214,11 @@ export function State({
 }) {
   if (loading)
     return (
-      <View style={[ui.card, { alignItems: "center", padding: 40 }]}>
-        <ActivityIndicator color={c.blue} />
-        <Text style={ui.muted}>Đang tải dữ liệu…</Text>
+      <View style={{ alignItems: "center", padding: 24 }}>
+        <ActivityIndicator
+          accessibilityLabel="Đang tải dữ liệu"
+          color={c.blue}
+        />
       </View>
     );
   if (error)
@@ -199,22 +235,114 @@ export function State({
       <View style={[ui.card, { alignItems: "center", padding: 32 }]}>
         <Ionicons name="file-tray-outline" size={32} color={c.muted} />
         <Text style={ui.heading}>Chưa có dữ liệu</Text>
-        <Text style={ui.muted}>Thử thay đổi bộ lọc hoặc khoảng thời gian.</Text>
       </View>
     );
   return null;
 }
+type DragPoint = { pageX: number; pageY: number };
+type DragTouches = {
+  touches: ArrayLike<DragPoint>;
+  changedTouches: ArrayLike<DragPoint>;
+};
+
 export function Sheet({
   visible,
   title,
   onClose,
   children,
+  footer,
 }: {
   visible: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
+  footer?: ReactNode;
 }) {
+  const [offset] = useState(() => new Animated.Value(0));
+  const scrollView = useRef<ScrollView>(null);
+  const scrollOffset = useRef(0);
+  const origin = useRef<{ x: number; y: number; handle: boolean } | null>(null);
+  const moved = useRef(false);
+
+  useEffect(() => {
+    if (visible) return;
+    origin.current = null;
+    scrollOffset.current = 0;
+    moved.current = false;
+    offset.setValue(0);
+  }, [offset, visible]);
+
+  const startDrag = useCallback(({ touches }: DragTouches, handle = false) => {
+    const first = touches.length === 1 ? touches[0] : null;
+    origin.current =
+      first && (handle || scrollOffset.current <= 1)
+        ? { x: first.pageX, y: first.pageY, handle }
+        : null;
+  }, []);
+  const distance = useCallback((point: DragPoint | undefined) => {
+    const first = origin.current;
+    if (!point || !first || (!first.handle && scrollOffset.current > 1))
+      return 0;
+    const dy = point.pageY - first.y;
+    return dy > 7 && dy > Math.abs(point.pageX - first.x) * 1.4 ? dy : 0;
+  }, []);
+  const cancelDrag = useCallback(() => {
+    origin.current = null;
+    if (!moved.current) return;
+    moved.current = false;
+    Animated.spring(offset, {
+      toValue: 0,
+      speed: 25,
+      bounciness: 0,
+      useNativeDriver: Platform.OS !== "web",
+    }).start();
+  }, [offset]);
+  const moveDrag = useCallback(
+    ({ touches }: DragTouches) => {
+      if (!origin.current) return;
+      if (touches.length !== 1) return cancelDrag();
+      const dy = distance(touches[0]);
+      if (dy || moved.current) {
+        moved.current = true;
+        offset.setValue(dy);
+      }
+    },
+    [cancelDrag, distance, offset],
+  );
+  const finishDrag = useCallback(
+    ({ touches, changedTouches }: DragTouches) => {
+      if (!origin.current) return;
+      const dismiss = !touches.length && distance(changedTouches[0]) >= 56;
+      cancelDrag();
+      if (dismiss) onClose();
+    },
+    [cancelDrag, distance, onClose],
+  );
+
+  useEffect(() => {
+    if (!visible || Platform.OS !== "web") return;
+    const node = scrollView.current?.getScrollableNode() as unknown as
+      | HTMLElement
+      | undefined;
+    if (!node) return;
+    const touchStart = (event: TouchEvent) => startDrag(event);
+    const touchMove = (event: TouchEvent) => {
+      if (event.cancelable && distance(event.touches[0]))
+        event.preventDefault();
+      moveDrag(event);
+    };
+    node.addEventListener("touchstart", touchStart, { passive: true });
+    node.addEventListener("touchmove", touchMove, { passive: false });
+    node.addEventListener("touchend", finishDrag);
+    node.addEventListener("touchcancel", cancelDrag);
+    return () => {
+      node.removeEventListener("touchstart", touchStart);
+      node.removeEventListener("touchmove", touchMove);
+      node.removeEventListener("touchend", finishDrag);
+      node.removeEventListener("touchcancel", cancelDrag);
+    };
+  }, [visible, startDrag, distance, moveDrag, finishDrag, cancelDrag]);
+
   return (
     <Modal
       visible={visible}
@@ -223,31 +351,85 @@ export function Sheet({
       onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
+        <Pressable
+          accessible={false}
+          focusable={false}
+          onPress={onClose}
+          style={StyleSheet.absoluteFill}
+        />
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modal}
+          style={styles.anchor}
         >
-          <SafeAreaView edges={["bottom"]} style={{ flexShrink: 1 }}>
-            <View
-              style={[ui.row, { padding: 20, justifyContent: "space-between" }]}
-            >
-              <Text style={[ui.heading, { flex: 1 }]}>{title}</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Đóng"
-                onPress={onClose}
-                hitSlop={12}
+          <Animated.View
+            style={[styles.modal, { transform: [{ translateY: offset }] }]}
+          >
+            <SafeAreaView edges={["bottom"]} style={{ flexShrink: 1 }}>
+              <View
+                onTouchStart={(event) => startDrag(event.nativeEvent, true)}
+                onTouchMove={(event) => moveDrag(event.nativeEvent)}
+                onTouchEnd={(event) => finishDrag(event.nativeEvent)}
+                onTouchCancel={cancelDrag}
+                style={[
+                  styles.sheetHeader,
+                  Platform.OS === "web" &&
+                    ({ touchAction: "none" } as ViewStyle),
+                ]}
               >
-                <Ionicons name="close" size={24} color={c.text} />
-              </Pressable>
-            </View>
-            <ScrollView
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ padding: 20, paddingTop: 0, gap: 16 }}
-            >
-              {children}
-            </ScrollView>
-          </SafeAreaView>
+                <View style={styles.handle} />
+                <View style={[ui.row, { justifyContent: "space-between" }]}>
+                  <Text
+                    accessibilityRole="header"
+                    style={[ui.heading, { flex: 1 }]}
+                  >
+                    {title}
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Đóng"
+                    onPress={onClose}
+                    style={[
+                      ui.iconButton,
+                      { borderRadius: 22, backgroundColor: c.soft },
+                    ]}
+                  >
+                    <Ionicons name="close" size={22} color={c.navy} />
+                  </Pressable>
+                </View>
+              </View>
+              <ScrollView
+                ref={scrollView}
+                bounces={false}
+                overScrollMode="never"
+                scrollEventThrottle={16}
+                onScroll={(event) => {
+                  scrollOffset.current = event.nativeEvent.contentOffset.y;
+                }}
+                onTouchStart={
+                  Platform.OS === "web"
+                    ? undefined
+                    : (event) => startDrag(event.nativeEvent)
+                }
+                onTouchMove={
+                  Platform.OS === "web"
+                    ? undefined
+                    : (event) => moveDrag(event.nativeEvent)
+                }
+                onTouchEnd={
+                  Platform.OS === "web"
+                    ? undefined
+                    : (event) => finishDrag(event.nativeEvent)
+                }
+                onTouchCancel={Platform.OS === "web" ? undefined : cancelDrag}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                contentContainerStyle={{ padding: 16, paddingTop: 3, gap: 12 }}
+              >
+                {children}
+              </ScrollView>
+              {footer ? <View style={styles.footer}>{footer}</View> : null}
+            </SafeAreaView>
+          </Animated.View>
         </KeyboardAvoidingView>
       </View>
     </Modal>
@@ -287,15 +469,38 @@ export function Pager({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(9,28,48,.5)",
+    backgroundColor: "rgba(9,40,33,.55)",
     justifyContent: "flex-end",
     alignItems: "center",
   },
+  anchor: { width: "100%", maxWidth: 640, maxHeight: "92%", flexShrink: 1 },
+  sheetHeader: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    paddingTop: 9,
+    backgroundColor: c.white,
+    gap: 5,
+    borderBottomWidth: 1,
+    borderColor: c.line,
+  },
+  handle: {
+    alignSelf: "center",
+    width: 38,
+    height: 4,
+    borderRadius: 4,
+    backgroundColor: "#AAC8BB",
+  },
+  footer: {
+    padding: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+    borderTopWidth: 1,
+    borderColor: c.line,
+    backgroundColor: c.white,
+  },
   modal: {
     backgroundColor: c.bg,
-    width: "100%",
-    maxWidth: 640,
-    maxHeight: "92%",
+    flexShrink: 1,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: "hidden",

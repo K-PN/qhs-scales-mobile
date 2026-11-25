@@ -1,59 +1,33 @@
 import { Redirect, Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
-import { c } from "../../lib/theme";
 import { State } from "../../components/UI";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useWindowDimensions } from "react-native";
+import { tabIcon, useTabStyle } from "../../components/TabStyle";
+
 export default function TabsLayout() {
-  const insets = useSafeAreaInsets();
-  const { width, fontScale } = useWindowDimensions();
-  const user = useAuthStore((s) => s.user),
-    ready = useAuthStore((s) => s.ready);
+  const user = useAuthStore((s) => s.user);
+  const ready = useAuthStore((s) => s.ready);
+  const adminSource = useAuthStore((s) => s.adminSource);
+  const admin = user?.role === "admin";
+  const tabStyle = useTabStyle(admin ? 5 : 3);
   if (!ready) return <State loading />;
   if (!user) return <Redirect href="/login" />;
-  const admin = user.role === "admin";
-  const bottomPadding = Math.max(8, insets.bottom);
+  if (user.stationType === "durian") return <Redirect href="/durian" />;
+  if (user.stationType === "unknown")
+    return <Redirect href="/station-unavailable" />;
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: c.blue,
-        tabBarInactiveTintColor: c.muted,
-        tabBarStyle: {
-          borderTopColor: c.line,
-          backgroundColor: "white",
-          height: 68 + bottomPadding + Math.max(0, fontScale - 1) * 18,
-          paddingTop: 6,
-          paddingBottom: bottomPadding,
-        },
-        tabBarLabelPosition: "below-icon",
-        tabBarItemStyle: { paddingVertical: 4 },
-        tabBarLabelStyle: {
-          fontSize: admin && width < 360 ? 10 : 11,
-          lineHeight: 16,
-          fontWeight: "600",
-          margin: 0,
-        },
-        tabBarHideOnKeyboard: true,
-      }}
-    >
+    <Tabs key={admin ? adminSource : "station"} screenOptions={tabStyle}>
       <Tabs.Screen
         name="dashboard"
         options={{
           title: admin ? "Điều hành" : "Tổng quan",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="grid-outline" color={color} size={size} />
-          ),
+          tabBarIcon: tabIcon("grid-outline"),
         }}
       />
       <Tabs.Screen
         name="weighings"
         options={{
           title: "Dữ liệu cân",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="car-outline" color={color} size={size} />
-          ),
+          tabBarIcon: tabIcon("receipt-outline"),
         }}
       />
       <Tabs.Screen
@@ -61,28 +35,22 @@ export default function TabsLayout() {
         options={{
           title: "Trạm cân",
           href: admin ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="business-outline" color={color} size={size} />
-          ),
+          tabBarIcon: tabIcon("business-outline"),
         }}
       />
       <Tabs.Screen
         name="accounts"
         options={{
-          title: "Nhân sự",
+          title: "Tài khoản",
           href: admin ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" color={color} size={size} />
-          ),
+          tabBarIcon: tabIcon("people-outline"),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Tài khoản",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-circle-outline" color={color} size={size} />
-          ),
+          title: admin ? "Hồ sơ" : "Tài khoản",
+          tabBarIcon: tabIcon("person-circle-outline"),
         }}
       />
       <Tabs.Screen name="index" options={{ href: null }} />

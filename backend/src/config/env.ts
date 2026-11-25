@@ -12,6 +12,10 @@ if (
 }
 
 export const env = {
+  durianStationIds: (process.env.QHS_DURIAN_STATION_IDS || "")
+    .split(",")
+    .map(Number)
+    .filter((id) => Number.isSafeInteger(id) && id > 0),
   companyStationId: Number(process.env.QHS_COMPANY_STATION_ID || 0),
   companyAdminUserIds: (process.env.QHS_COMPANY_ADMIN_USER_IDS || "")
     .split(",")
@@ -30,6 +34,11 @@ export const env = {
     password: process.env.DB_PASSWORD || "",
     database: process.env.DB_NAME || "can15657_canquochung",
   },
+  secondDatabase: process.env.DB2_NAME?.trim() || "",
+  secondDurianStationIds: (process.env.QHS_DURIAN_STATION_IDS_DB2 || "")
+    .split(",")
+    .map(Number)
+    .filter((id) => Number.isSafeInteger(id) && id > 0),
   clientUrl:
     process.env.CLIENT_URL ||
     "http://localhost:3000,http://localhost:8081,http://127.0.0.1:3000,http://127.0.0.1:8081",

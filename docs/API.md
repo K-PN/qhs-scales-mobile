@@ -50,16 +50,28 @@ Không có route xuất Excel/PDF.
 ## Quản trị
 
 GET /admin/stations: q, page, limit.
+GET /admin/stations/:id: chi tiết trạm. Dùng `enabledOnly=1` trên danh sách để chọn trạm đang hoạt động.
 POST /admin/stations: name, address, phonenumber, enabled.
 PATCH /admin/stations/:id: các trường trên và version.
 GET /admin/accounts: q, stationId, page, limit.
 GET /admin/roles: vai trò desktop.
 POST /admin/accounts: stationId, username, password, roleId, enabled.
-PATCH /admin/accounts/:id: version, roleId, enabled, password?.
+PATCH /admin/accounts/:id: version, roleId, enabled, username?, stationId?, password?, durianRole?.
+POST /admin/accounts và PATCH chấp nhận `durianRole` là `none`, `operator` hoặc `admin` ở trạm sầu riêng đã cấu hình. Đổi trạm thu hồi quyền sầu riêng tại trạm cũ và phiên đăng nhập của tài khoản.
+DELETE /admin/accounts/:id và DELETE /admin/stations/:id nhận `version`. Xóa khỏi danh sách quản lý bằng cách vô hiệu hóa và ghi nhật ký, giữ dòng desktop để bảo toàn lịch sử phiếu. Chuyển hoặc xóa tài khoản đã gán trước khi xóa trạm. Tài khoản và trạm quản trị công ty được bảo vệ.
 viewAll là trường tương thích cũ, không thể thu hẹp chính sách xem toàn trạm mới.
 GET /admin/audit: page, limit. Không hiển thị nhật ký trong trang tài khoản trên app.
 
 Các thay đổi quản trị dùng transaction, khóa bản ghi, kiểm tra version và audit không chứa mật khẩu.
 400 sai dữ liệu; 401 không xác thực; 403 thiếu quyền; 404 không thấy; 409 dữ liệu đã đổi / tên tài khoản trùng; 503 hệ thống chưa sẵn sàng.
 GET /health kiểm tra kết nối DB và đầy đủ bảng cho ứng dụng, không chỉ SELECT 1.
+
+## Hai database
+
+- Database 1 là nguồn `DB_NAME` hiện tại. Database 2 tùy chọn dùng `DB2_NAME=can22456_qhs_scales`. Hai database dùng cùng máy chủ, cổng và tài khoản dịch vụ MariaDB. Các bảng app và desktop cần tồn tại trong từng database. Áp dụng `backend/database/mobile-station-config.sql` vào cả hai database trước khi bật Database 2, sau đó khởi động lại backend. Phiên mobile của cả hai nguồn được lưu tại Database 1.
+- `POST /auth/login` hỗ trợ `source: "db1" | "db2"` tùy chọn. Mặc định thử cả hai nguồn đã bật. Khi thông tin đăng nhập khớp nhiều tài khoản, API trả 409 để app yêu cầu chọn nguồn hoặc mã trạm. Tài khoản công ty và tài khoản quản trị tương thích `app_users` chỉ được cấp quyền Điều hành từ Database 1. Tài khoản desktop trong `tbusers` của cả hai nguồn đăng nhập được theo quyền trạm của nguồn đó.
+- Trong **Trạm cân**, chọn database chứa trạm/tài khoản ở đầu màn hình. Mở **Cập nhật trạm** và chọn **Loại trạm** cùng **Nguồn dữ liệu cân**. Nếu chọn database khác, nhập mã trạm đích và đối chiếu tên trạm hiển thị trước khi lưu. Đổi cấu hình tác động đến mọi tài khoản của trạm và thu hồi các phiên đang dùng. Quyền xem sầu riêng tiếp tục dựa trên tài khoản và trạm tại nguồn đăng nhập.
+- Các API `/admin/*` nhận `?source=db1|db2` để chọn nguồn quản lý. POST/PATCH trạm nhận thêm `data: { stationType: "truck" | "durian", dataSource: "db1" | "db2", dataStationId?: number }`. Bắt buộc có `dataStationId` khi nguồn dữ liệu khác nguồn quản lý. Bỏ cả đối tượng `data` để giữ cấu hình đang dùng.
+- Với tài khoản trạm, API lấy nguồn và mã trạm dữ liệu từ cấu hình phía máy chủ. Với Điều hành, báo cáo và danh sách phiếu xe tải tổng hợp theo database đang chọn. Nếu lọc một trạm, danh sách, chi tiết và báo cáo đọc theo nguồn dữ liệu đã gán cho trạm đó. Hai database có thể chứa bản sao của cùng dữ liệu lịch sử nên bảng tổng quan hiển thị theo từng database.
+- Trạm chưa có cấu hình trong bảng mới tiếp tục đọc từ database đăng nhập. Loại trạm mặc định dùng `QHS_DURIAN_STATION_IDS` của Database 1 và `QHS_DURIAN_STATION_IDS_DB2` của Database 2. Chọn loại trạm trong Admin để ghi đè cấu hình mặc định.
 

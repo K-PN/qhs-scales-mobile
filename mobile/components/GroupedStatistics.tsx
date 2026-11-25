@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, queryString } from "../lib/api";
 import { Page, ReportGroupRow } from "../lib/types";
 import { number, ui } from "../lib/theme";
-import { useAuthStore } from "../store/authStore";
+import { useAuthStore, userScope } from "../store/authStore";
 import { Button, Chips, Field, Pager, State } from "./UI";
 
 type Group = "customer" | "item" | "vehicle";
@@ -118,9 +118,7 @@ function GroupRows({
   const query = useQuery({
     queryKey: [
       "reportGroups",
-      user.role,
-      user.id,
-      user.stationId,
+      ...userScope(user),
       groupBy,
       startDate,
       endDate,

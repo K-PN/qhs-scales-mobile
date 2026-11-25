@@ -76,5 +76,9 @@ Bằng chứng phiên bản mới nằm ở artifacts/v3.
 
 Xem docs/API.md, docs/DEVELOPMENT.md và docs/VERIFICATION.md.
 
+Có thể bật Database 2 trên cùng máy chủ MariaDB. Tài khoản tiếp tục đăng nhập ở nguồn gốc, còn Admin có thể chọn loại cân và nguồn phiếu cho từng trạm. Xem [cấu hình hai database](docs/API.md#hai-database).
+
+Cấu hình trạm và kiểm thử tính năng theo dõi cân sầu riêng: [docs/DURIAN_MOBILE.md](docs/DURIAN_MOBILE.md).
+
 Liên kết Chính sách quyền riêng tư ở Đăng nhập và Tài khoản: https://www.doluongquochung.com/privacy-policies/qhs-scales (cấu hình tại `mobile/lib/links.ts`). Bản nội dung đi kèm app vẫn ở `/privacy-policy`. Chạy `npm run privacy:export` để xuất HTML cùng nội dung; xem `website/privacy-policy/README.md`. Giải thích và lưu ý dọn thư mục đầu ra: `docs/ARTIFACTS.md`.
 

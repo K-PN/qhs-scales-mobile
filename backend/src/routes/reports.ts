@@ -1,15 +1,17 @@
 import { Router } from "express";
-import { db } from "../config/db.js";
-import { requireAuth } from "../middleware/auth.js";
+import { dbFor } from "../config/db.js";
+import { requireAuth, requirePermission } from "../middleware/auth.js";
 import { route } from "../utils/http.js";
-import { filters, weighingScope } from "../utils/weighings.js";
+import { filters, weighingData, weighingScope } from "../utils/weighings.js";
 import { groupedReportQueries } from "../utils/report-groups.js";
+import { notArchived } from "../config/access.js";
 const router = Router();
-router.use(requireAuth);
+router.use(requireAuth, requirePermission("truck:read"));
 router.get(
   "/groups",
   route(async (req, res) => {
-    const query = groupedReportQueries(req.user!, req.query);
+    const { db, user } = await weighingData(req.user!, filters.parse(req.query));
+    const query = groupedReportQueries(user, req.query);
     const [items] = await db.execute(query.itemsSql, query.params);
     const [count] = await db.execute(query.countSql, query.params);
     res.json({
@@ -24,8 +26,9 @@ router.get(
 router.get(
   "/",
   route(async (req, res) => {
-    const f = filters.parse(req.query),
-      scope = weighingScope(req.user!, f);
+    const f = filters.parse(req.query);
+    const { db, user } = await weighingData(req.user!, f);
+    const scope = weighingScope(user, f);
     const [rows] = await db.execute(
       `SELECT COUNT(*) totalRecords,COALESCE(SUM(w.net_weight),0) totalNet,
     COALESCE(SUM(w.weight_2 IS NULL),0) pending,COALESCE(SUM(w.weight_2 IS NOT NULL),0) complete,
@@ -52,7 +55,7 @@ router.get(
         : trendUnit === "month"
           ? "DATE_FORMAT(w.date_in,'%Y-%m-01')"
           : "DATE_FORMAT(w.date_in,'%Y-01-01')";
-    const trendScope = weighingScope(req.user!, {
+    const trendScope = weighingScope(user, {
       ...f,
       startDate: trendStart,
       endDate: trendEnd,
@@ -63,7 +66,7 @@ router.get(
     GROUP BY ${trendDay} ORDER BY day`,
       trendScope.params,
     );
-    const today = weighingScope(req.user!, { stationId: f.stationId });
+    const today = weighingScope(user, { stationId: f.stationId });
     const [todayRows] = await db.execute(
       `SELECT COUNT(*) records,COALESCE(SUM(w.net_weight),0) weight,COALESCE(SUM(w.price_total),0) revenue FROM tbweight w
     WHERE ${today.sql} AND w.date_in>=CURDATE() AND w.date_in<DATE_ADD(CURDATE(),INTERVAL 1 DAY)`,
@@ -71,10 +74,11 @@ router.get(
     );
     let system;
     if (req.user!.role === "admin") {
-      const [s] = await db.execute(
-        "SELECT COUNT(*) stations,COALESCE(SUM(enable=1),0) activeStations FROM tbusers_group",
+      const managementDb = dbFor(f.source);
+      const [s] = await managementDb.execute(
+        `SELECT COUNT(*) stations,COALESCE(SUM(enable=1),0) activeStations FROM tbusers_group WHERE ${notArchived("station", "tbusers_group.id")}`,
       );
-      const [a] = await db.execute("SELECT COUNT(*) accounts FROM tbusers");
+      const [a] = await managementDb.execute(`SELECT COUNT(*) accounts FROM tbusers WHERE ${notArchived("account", "tbusers.id")}`);
       system = { ...(s as any[])[0], ...(a as any[])[0] };
     }
     res.json({

@@ -1,16 +1,16 @@
 import { Router } from "express";
 import { z } from "zod";
-import { db } from "../config/db.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, requirePermission } from "../middleware/auth.js";
 import { route, HttpError } from "../utils/http.js";
-import { filters, weighingScope, columns, joins } from "../utils/weighings.js";
+import { filters, weighingData, weighingScope, columns, joins } from "../utils/weighings.js";
 const router = Router();
-router.use(requireAuth);
+router.use(requireAuth, requirePermission("truck:read"));
 router.get(
   "/",
   route(async (req, res) => {
-    const f = filters.parse(req.query),
-      scope = weighingScope(req.user!, f);
+    const f = filters.parse(req.query);
+    const { db, user } = await weighingData(req.user!, f);
+    const scope = weighingScope(user, f);
     // Validated integers are rendered as literals: avoids MySQL prepared LIMIT incompatibilities.
     const [items] = await db.execute(
       `SELECT ${columns} ${joins} WHERE ${scope.sql} ORDER BY w.date_in DESC,w.id DESC LIMIT ${f.limit} OFFSET ${(f.page - 1) * f.limit}`,
@@ -31,8 +31,10 @@ router.get(
 router.get(
   "/:id",
   route(async (req, res) => {
-    const id = z.coerce.number().int().positive().parse(req.params.id),
-      scope = weighingScope(req.user!);
+    const id = z.coerce.number().int().positive().parse(req.params.id);
+    const f = filters.parse(req.query);
+    const { db, user } = await weighingData(req.user!, f);
+    const scope = weighingScope(user);
     const [rows] = await db.execute(
       `SELECT ${columns} ${joins} WHERE ${scope.sql} AND w.id=?`,
       [...scope.params, id],

@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { AppUser } from "../types/auth.js";
+import { databaseSource, dbFor } from "../config/db.js";
+import { requireDataStation, stationConfig } from "../config/station-type.js";
+import { HttpError } from "./http.js";
 const date = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -14,6 +17,7 @@ export const filters = z
     startDate: date.optional(),
     endDate: date.optional(),
     stationId: z.coerce.number().int().positive().optional(),
+    source: databaseSource.optional(),
     creatorId: z.coerce.number().int().positive().optional(),
     status: z.enum(["all", "pending", "complete"]).default("all"),
     page: z.coerce.number().int().min(1).max(100000).default(1),
@@ -23,6 +27,27 @@ export const filters = z
     message: "Khoảng ngày không hợp lệ",
   });
 export type Filters = z.infer<typeof filters>;
+
+export async function weighingData(user: AppUser, filters: Partial<Filters>) {
+  const source = user.source ?? "db1";
+  if (user.role === "station") {
+    const dataSource = user.dataSource ?? source;
+    const dataStationId = user.dataStationId ?? user.stationId;
+    if (!dataStationId) throw new HttpError(403, "Tài khoản chưa được gán trạm.");
+    await requireDataStation({ stationType: "truck", dataSource, dataStationId }, source);
+    return { db: dbFor(dataSource), user: { ...user, stationId: dataStationId } };
+  }
+  const selected = filters.source ?? "db1";
+  if (!filters.stationId) return { db: dbFor(selected), user };
+  const config = await stationConfig(selected, filters.stationId);
+  if (config.stationType !== "truck")
+    throw new HttpError(400, "Trạm đã chọn chạy cân sầu riêng.");
+  await requireDataStation(config, selected);
+  return {
+    db: dbFor(config.dataSource),
+    user: { ...user, role: "station" as const, stationId: config.dataStationId },
+  };
+}
 export function weighingScope(user: AppUser, f: Partial<Filters> = {}) {
   const clauses: string[] = ["w.enable=1"],
     params: (string | number)[] = [];

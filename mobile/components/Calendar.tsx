@@ -5,9 +5,11 @@ import { c, ui, localDay } from "../lib/theme";
 export default function Calendar({
   value,
   onChange,
+  accent = c.blue,
 }: {
   value: string;
   onChange: (v: string) => void;
+  accent?: string;
 }) {
   const [month, setMonth] = useState(
     () => new Date((value || localDay()).slice(0, 7) + "-01T12:00:00"),
@@ -29,7 +31,7 @@ export default function Calendar({
           onPress={() => setMonth(new Date(year, m - 1, 1))}
           style={{ padding: 12 }}
         >
-          <Ionicons name="chevron-back" size={20} color={c.blue} />
+          <Ionicons name="chevron-back" size={20} color={accent} />
         </Pressable>
         <Text style={ui.heading}>
           Tháng {m + 1}, {year}
@@ -40,7 +42,7 @@ export default function Calendar({
           onPress={() => setMonth(new Date(year, m + 1, 1))}
           style={{ padding: 12 }}
         >
-          <Ionicons name="chevron-forward" size={20} color={c.blue} />
+          <Ionicons name="chevron-forward" size={20} color={accent} />
         </Pressable>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
@@ -76,7 +78,7 @@ export default function Calendar({
               onPress={() => onChange(key)}
               style={{
                 width: "14.2857%",
-                height: 42,
+                height: accent === c.blue ? 42 : 44,
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -86,7 +88,7 @@ export default function Calendar({
                   width: 36,
                   height: 36,
                   borderRadius: 18,
-                  backgroundColor: selected ? c.blue : "transparent",
+                  backgroundColor: selected ? accent : "transparent",
                   justifyContent: "center",
                   alignItems: "center",
                 }}
