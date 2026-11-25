@@ -268,7 +268,19 @@ router.patch(
         `${select} WHERE g.id=? AND ${notArchived("station", "g.id")} FOR UPDATE`,
         [id],
       );
-      stale((rows as any[])[0], b.version);
+      const station = (rows as any[])[0];
+      stale(station, b.version);
+      if (config?.stationType === "durian" && source === "db1" && id === env.companyStationId)
+        throw new HttpError(409, "Trạm quản trị công ty phải dùng loại cân xe tải.");
+      if (config?.stationType === "durian" && effectiveStationConfig(source, id, station).stationType === "truck") {
+        const current = effectiveStationConfig(source, id, station);
+        const [tickets] = await (current.dataSource === source ? c : dbFor(current.dataSource)).execute(
+          "SELECT 1 FROM tbweight WHERE idusergroup=? LIMIT 1",
+          [current.dataStationId],
+        );
+        if ((tickets as unknown[]).length)
+          throw new HttpError(409, "Trạm đã có phiếu cân xe tải. Hãy tạo trạm sầu riêng riêng để giữ lịch sử.");
+      }
       if (source === "db1" && id === env.companyStationId && !b.enabled)
         throw new HttpError(
           409,
@@ -284,7 +296,7 @@ router.patch(
         [source === "db1" ? "station" : "station2", id],
       );
       await audit(c, req.user!.id, "update", "station", id, {
-        before: stationView((rows as any[])[0], source),
+        before: stationView(station, source),
         after: {
           name: b.name,
           address: b.address,

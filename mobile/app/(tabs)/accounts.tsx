@@ -259,10 +259,10 @@ function AccountForm({
           ) : null}
           {target?.stationType === "durian" ? (
             <>
-              <Text style={ui.label}>Quyền cân sầu riêng</Text>
+              <Text style={ui.label}>Vai trò trên máy cân sầu riêng</Text>
               <Chips
                 items={[
-                  { value: "none", label: "Chưa cấp" },
+                  { value: "none", label: "Mặc định của trạm" },
                   { value: "operator", label: "Vận hành" },
                   { value: "admin", label: "Quản trị trạm" },
                 ]}

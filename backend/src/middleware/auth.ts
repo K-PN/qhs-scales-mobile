@@ -63,7 +63,7 @@ export async function loadUser(
   const companyAdmin = source === "db1" && isCompanyAdmin(u.id, u.idusergroup);
   const { stationType, canReadDurian, dataSource, dataStationId, revision } = companyAdmin
     ? { stationType: "truck" as const, canReadDurian: false, dataSource: source, dataStationId: u.idusergroup, revision: undefined }
-    : await stationAccess(source, u.idusergroup, u.id);
+    : await stationAccess(source, u.idusergroup);
   const permissions: NonNullable<AppUser["permissions"]> = companyAdmin
     ? ["truck:read", "admin:manage"]
     : stationType === "truck" ? ["truck:read"] : canReadDurian ? ["durian:read"] : [];

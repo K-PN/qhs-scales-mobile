@@ -46,7 +46,7 @@ async function login(username, status = 200, source) {
   return result.data;
 }
 
-async function seed(db) {
+async function seed(db, source = "db1") {
   await db.query(`
     CREATE TABLE tbusers_group (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(200),address VARCHAR(200),phonenumber VARCHAR(50),enable TINYINT,startdate DATE,enddate DATE,
       lastid INT,sign_1 VARCHAR(20),sign_2 VARCHAR(20),sign_3 VARCHAR(20),sign_4 VARCHAR(20),idweight_apptype INT,idapp_types INT);
@@ -90,6 +90,10 @@ async function seed(db) {
         "utf8",
       ),
     );
+  await db.execute(
+    "INSERT INTO mobile_station_config (station_id,station_type,data_source,data_station_id,revision) VALUES (2,'durian',?,2,UUID()),(3,'durian',?,3,UUID()),(4,'durian',?,4,UUID())",
+    [source, source, source],
+  );
   await db.execute(
     "INSERT INTO app_users (id,email,password_hash,full_name,role,status) VALUES (1,'legacy-admin',?,'QHS','admin',1)",
     [await bcrypt.hash(password, 4)],
@@ -262,8 +266,8 @@ async function verifyDatabaseSources() {
   const ticket = await as(mappedDurian, "/durian/tickets/completed");
   assert.equal(ticket.status, 200);
   assert.equal(ticket.data.ticket.plate, "DB2-DURIAN");
-  const noGrant = await login("unassigned", 200, "db1");
-  assert.equal((await as(noGrant, "/durian/tickets/completed")).status, 403);
+  const inherited = await login("unassigned", 200, "db1");
+  assert.equal((await as(inherited, "/durian/tickets/completed")).status, 200);
   await configure("db1", 2, { stationType: "truck", dataSource: "db1" });
   const switched = await login("durian", 200, "db1");
   assert.equal(switched.user.stationType, "truck");
@@ -279,7 +283,7 @@ async function verifyApi(db) {
   const unassigned = await login("unassigned");
   const company = await login("company");
   const legacy = await login("legacy-admin");
-  assert.equal((await login("unknown")).user.stationType, "unknown");
+  assert.equal((await login("unknown")).user.stationType, "truck");
   await login("disabled", 401);
   assert.equal(truck.user.stationType, "truck");
   assert.deepEqual(durian.user.permissions, ["durian:read"]);
@@ -300,7 +304,7 @@ async function verifyApi(db) {
   assert.equal((await as(truck, "/weighings/102")).status, 404);
   assert.equal((await as(truck, "/durian/tickets/completed")).status, 403);
   assert.equal((await as(durian, "/weighings")).status, 403);
-  assert.equal((await as(unassigned, "/durian/overview")).status, 403);
+  assert.equal((await as(unassigned, "/durian/overview")).status, 200);
   assert.equal((await as(other, "/durian/tickets/completed")).status, 404);
   assert.equal(
     (await as(durian, "/durian/tickets/other-only?stationId=3")).status,
@@ -511,8 +515,8 @@ async function verifyApi(db) {
   await db.query(
     "DELETE FROM qhs_durian_user_access WHERE GroupId=3 AND UserId=31",
   );
-  assert.equal((await as(other, "/durian/overview")).status, 401);
-  assert.deepEqual((await login("durian-other")).user.permissions, []);
+  assert.equal((await as(other, "/durian/overview")).status, 200);
+  assert.deepEqual((await login("durian-other")).user.permissions, ["durian:read"]);
   await request("/auth/logout", {
     method: "POST",
     body: { refreshToken: durian.refreshToken },
@@ -819,7 +823,7 @@ async function expectAdminAccountWorkflow(page, button, visible) {
     if (secondDbName) {
       await db.query("CREATE DATABASE " + secondDbName + " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
       await db.changeUser({ database: secondDbName });
-      await seed(db);
+      await seed(db, "db2");
       await db.query("UPDATE tbweight SET formcode='DB2-101' WHERE id=101");
       await db.query("UPDATE qhs_durian_records SET Payload=JSON_SET(Payload,'$.Plate','DB2-DURIAN') WHERE GroupId=2 AND Kind='ticket' AND RecordId='completed'");
       await db.changeUser({ database: dbName });
@@ -842,8 +846,6 @@ async function expectAdminAccountWorkflow(page, button, visible) {
           DB_PASSWORD: process.env.QHS_TEST_DB_PASSWORD || "test-root-only",
           NODE_ENV: "test",
           JWT_ACCESS_SECRET: "isolated-durian-fixture-only-1234567890123456",
-          QHS_DURIAN_STATION_IDS: "2,3,4",
-          QHS_DURIAN_STATION_IDS_DB2: "2,3,4",
           QHS_COMPANY_STATION_ID: "1",
           QHS_COMPANY_ADMIN_USER_IDS: "12",
           CLIENT_URL: "http://localhost:8088",

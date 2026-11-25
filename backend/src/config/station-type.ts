@@ -1,5 +1,4 @@
 import { databaseSources, dbFor, type DatabaseSource } from "./db.js";
-import { env } from "./env.js";
 import { HttpError } from "../utils/http.js";
 import { notArchived } from "./access.js";
 import { enabled } from "../utils/security.js";
@@ -39,9 +38,8 @@ export function effectiveStationConfig(
   stationId: number,
   row?: Partial<StationConfigRow>,
 ): StationConfig {
-  const durianIds = source === "db1" ? env.durianStationIds : env.secondDurianStationIds;
   return {
-    stationType: row?.station_type ?? (durianIds.includes(stationId) ? "durian" : "truck"),
+    stationType: row?.station_type ?? "truck",
     dataSource: row?.data_source ?? source,
     dataStationId: row?.data_station_id ?? stationId,
     revision: row?.revision,
@@ -70,9 +68,6 @@ export async function validateDataStation(
   const dataTable = config.stationType === "truck" ? "tbweight" : "qhs_durian_records";
   if (!tables.has(dataTable))
     throw new HttpError(409, "Nguồn đã chọn thiếu bảng dữ liệu cho loại trạm này.");
-  if (config.stationType === "durian" &&
-      !(await sourceTables(identitySource)).has("qhs_durian_user_access"))
-    throw new HttpError(409, "Nguồn tài khoản thiếu bảng phân quyền sầu riêng.");
   if (config.dataSource === identitySource) {
     if (identityStationId !== undefined && config.dataStationId !== identityStationId)
       throw new HttpError(400, "Trạm trong cùng database phải dùng mã trạm của nó.");
@@ -95,29 +90,11 @@ async function requireActiveStation(source: DatabaseSource, id: number) {
     throw new HttpError(409, "Trạm dữ liệu không tồn tại hoặc đã bị khóa.");
 }
 
-export async function stationAccess(source: DatabaseSource, stationId: number, userId: number) {
+export async function stationAccess(source: DatabaseSource, stationId: number) {
   const config = await stationConfig(source, stationId);
-  const accessTables = await sourceTables(source);
-  const hasGrantTable = accessTables.has("qhs_durian_user_access");
-  if (config.stationType === "durian") {
-    if (!hasGrantTable ||
-        (config.dataSource === source && !accessTables.has("qhs_durian_records")))
-      return { ...config, stationType: "unknown", canReadDurian: false } as const;
-    const [rows] = await dbFor(source).execute(
-      "SELECT 1 FROM qhs_durian_user_access WHERE GroupId=? AND UserId=? AND Role IN ('operator','admin')",
-      [stationId, userId],
-    );
-    return { ...config, stationType: "durian", canReadDurian: (rows as unknown[]).length > 0 } as const;
-  }
-  if (config.revision || !hasGrantTable || !accessTables.has("qhs_durian_records"))
+  if (config.stationType === "truck")
     return { ...config, stationType: "truck", canReadDurian: false } as const;
-  const [rows] = await dbFor(source).execute(
-    "SELECT 1 FROM qhs_durian_user_access WHERE GroupId=? LIMIT 1",
-    [stationId],
-  );
-  return {
-    ...config,
-    stationType: (rows as unknown[]).length ? "unknown" : "truck",
-    canReadDurian: false,
-  } as const;
+  if (!(await sourceTables(config.dataSource)).has("qhs_durian_records"))
+    return { ...config, stationType: "unknown", canReadDurian: false } as const;
+  return { ...config, stationType: "durian", canReadDurian: true } as const;
 }

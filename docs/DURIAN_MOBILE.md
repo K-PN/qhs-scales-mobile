@@ -2,16 +2,11 @@
 
 ## Cấu hình trạm
 
-Backend dùng chung tài khoản desktop trong `tbusers` và xác định trạm từ `tbusers.idusergroup`. Khai báo các ID đã kiểm tra trong `QHS_DURIAN_STATION_IDS` của `backend/.env`, cách nhau bằng dấu phẩy. Trên CloudNetwork đang cấu hình, mã trạm đã đối chiếu là `52`. Khởi động lại backend sau khi thay đổi biến này.
+Backend xác thực qua **tbusers** và lấy trạm từ **tbusers.idusergroup**. Admin đặt loại **Xe tải** hoặc **Sầu riêng** trong **Quản trị → Trạm cân**. Loại này được lưu trong **mobile_station_config** và áp dụng cho mọi tài khoản đang hoạt động của trạm. Trạm chưa phân loại mặc định là xe tải. Trạm 52 đã được đối chiếu là trạm thử sầu riêng.
 
-Khi dùng hai database, Admin có thể đặt loại trạm và nguồn đọc phiếu trong giao diện **Trạm cân**. Cấu hình đã lưu trong Admin được ưu tiên hơn danh sách ID mặc định. Kiểm tra mã trạm ở từng nguồn trước khi gán và xem [hướng dẫn cấu hình](API.md#hai-database).
+Tài khoản sầu riêng dùng cùng tên đăng nhập và mật khẩu trên desktop và điện thoại. Vai trò trong **qhs_durian_user_access** dành cho máy cân Windows. Trên điện thoại, quyền xem sầu riêng đi theo trạm. Backend trả **stationType** và **permissions** ở các luồng đăng nhập, làm mới token và **/auth/me**. Phiên hiện tại của trạm sẽ cần đăng nhập lại sau khi admin đổi cấu hình trạm.
 
-- Trạm xe tải dùng đăng nhập, báo cáo và phân quyền hiện có. Quản trị công ty và tài khoản quản trị cũ vẫn vào giao diện Điều hành.
-- Tài khoản trạm sầu riêng dùng cùng mật khẩu desktop. Để đọc dữ liệu, tài khoản phải đang hoạt động và có dòng tương ứng với cặp `GroupId` / `UserId` trong `qhs_durian_user_access`, với vai trò desktop `operator` hoặc `admin`. Hai vai trò này có cùng quyền chỉ xem trên app. Phân quyền theo từng nhà cung cấp và cấp nhiều trạm cho một tài khoản chưa tồn tại trong nguồn đang dùng.
-- Trạm có quyền desktop sầu riêng nhưng chưa được cấu hình, hoặc trạm đã cấu hình nhưng thiếu bảng nguồn, nhận trạng thái chưa xác định. App yêu cầu liên hệ hỗ trợ.
-- Backend trả `stationType` và `permissions` khi đăng nhập, làm mới token và gọi `/auth/me`. Phiên cũ có thể cần đăng nhập lại nếu loại trạm hoặc quyền sầu riêng thay đổi.
-
-Các bảng CloudNetwork đã được bản desktop tạo. Bản nâng cấp này không cần migration. App phát hành dùng `EXPO_PUBLIC_API_URL` trỏ đến backend HTTPS.
+Cấu hình phát hành dùng duy nhất **can22456_canquochung** qua **DB_NAME**. Bỏ **DB2_NAME** khỏi môi trường production để App dùng một nguồn. Bản cài trỏ tới backend điện thoại qua **EXPO_PUBLIC_API_URL**. Dữ liệu xe tải hiện có tiếp tục được đọc từ **tbweight**.
 
 ## Cách đọc và tính số liệu
 
