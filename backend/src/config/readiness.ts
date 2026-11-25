@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { db } from "./db.js";
+import { databaseSources, dbFor, type DatabaseSource } from "./db.js";
 import { HttpError } from "../utils/http.js";
 import { logger } from "../utils/logger.js";
 
@@ -19,25 +19,24 @@ export function missingTables(names: string[]): string[] {
   return requiredTables.filter((name) => !present.has(name));
 }
 
-let cached: { checkedAt: number; missing: string[] } | undefined;
-let lastWarning = "";
-export async function checkReadiness(force = false): Promise<string[]> {
-  if (!force && cached && Date.now() - cached.checkedAt < 2000)
-    return cached.missing;
-  const [rows] = await db.execute(
+const readiness = new Map<DatabaseSource, { checkedAt: number; missing: string[] }>();
+export async function checkReadiness(force = false, source: DatabaseSource = "db1"): Promise<string[]> {
+  const cached = readiness.get(source);
+  if (!force && cached && Date.now() - cached.checkedAt < 2000) return cached.missing;
+  const [rows] = await dbFor(source).execute(
     "SELECT TABLE_NAME AS name FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE()",
   );
-  const missing = missingTables(
-    (rows as { name: string }[]).map((row) => row.name),
-  );
-  cached = { checkedAt: Date.now(), missing };
+  const names = (rows as { name: string }[]).map((row) => row.name);
+  const missing = missingTables(names);
+  if (databaseSources.length > 1 && !names.includes("mobile_station_config"))
+    missing.push("mobile_station_config");
+  readiness.set(source, { checkedAt: Date.now(), missing });
   const warning = missing.join(", ");
-  if (warning && warning !== lastWarning) {
+  if (warning && warning !== cached?.missing.join(", ")) {
     logger.warn(
-      `Application setup incomplete. Missing tables: ${warning}. Review backend/database/mobile-v2.sql before applying to the configured database.`,
+      `Application setup incomplete for ${source}. Missing tables: ${warning}.`,
     );
   }
-  lastWarning = warning;
   return missing;
 }
 

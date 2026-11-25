@@ -7,7 +7,7 @@ import rateLimit from "express-rate-limit";
 
 import { env } from "./config/env.js";
 import { logger } from "./utils/logger.js";
-import { pool } from "./config/db.js";
+import { databaseSources, pool } from "./config/db.js";
 import apiRoutes from "./routes/index.js";
 import { errorHandler } from "./utils/http.js";
 import { checkReadiness } from "./config/readiness.js";
@@ -58,22 +58,16 @@ app.use(
 );
 
 app.get("/health", async (_req, res) => {
-  try {
-    const [rows] = await pool.execute("SELECT 1 AS ok");
-    const missing = await checkReadiness(true);
-    res.status(missing.length ? 503 : 200).json({
-      status: missing.length ? "setup_required" : "ok",
-      db: rows ? "connected" : "unknown",
-      appReady: missing.length === 0,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (err) {
-    res.status(503).json({
-      status: "unavailable",
-      db: "unreachable",
-      timestamp: new Date().toISOString(),
-    });
-  }
+  const checks = await Promise.allSettled(databaseSources.map((source) => checkReadiness(true, source)));
+  const unavailable = checks.some((check) => check.status === "rejected");
+  const appReady = checks.every((check) => check.status === "fulfilled" && !check.value.length);
+  res.status(appReady ? 200 : 503).json({
+    status: appReady ? "ok" : unavailable ? "unavailable" : "setup_required",
+    db: unavailable ? "unreachable" : "connected",
+    appReady,
+    databaseSources,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 app.use("/", apiRoutes);

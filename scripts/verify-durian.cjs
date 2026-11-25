@@ -857,7 +857,9 @@ async function expectAdminAccountWorkflow(page, button, visible) {
       if ((await request("/health").catch(() => null))?.status === 200) break;
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
-    assert.equal((await request("/health")).status, 200);
+    const health = await request("/health");
+    assert.equal(health.status, 200);
+    assert.deepEqual(health.data.databaseSources, secondDbName ? ["db1", "db2"] : ["db1"]);
     if (secondDbName) {
       if (process.env.PLAYWRIGHT_PATH) await verifyDatabaseSourceBrowser();
       await verifyDatabaseSources();
