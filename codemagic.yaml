@@ -79,8 +79,6 @@ workflows:
       cocoapods: default
       node: v22.23.2
       ios_signing: *store_signing
-      vars:
-        EXPO_PUBLIC_API_URL: ""
     scripts:
       - *prepare_expo
       - *prebuild_ios
